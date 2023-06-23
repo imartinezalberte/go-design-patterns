@@ -1,6 +1,9 @@
 package creational_test
 
 import (
+	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"sync"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -63,6 +66,34 @@ var _ = Describe("Singleton", func() {
 			wg.Wait()
 
 			Ω(*(*int64)(c)).To(Equal(max))
+		})
+	})
+
+	When("Adding one multiple times to a handler, value is updated", func() {
+		var (
+			c *creational.Counter
+			req *http.Request
+			recorder *httptest.ResponseRecorder
+		)
+
+		BeforeEach(func() {
+			var err error
+			c = creational.CounterSingleton()
+			c.Reset()
+
+			req, err = http.NewRequest(http.MethodGet, "", nil)
+			Ω(err).To(BeNil())
+		})
+
+		It("value should be equal 100", func() {
+			var i int64 = 1
+			for ; i < 101; i++ {
+				recorder = httptest.NewRecorder()
+
+				c.ServeHTTP(recorder, req)
+
+				Ω(string(recorder.Body.Bytes())).To(Equal(fmt.Sprintf(creational.CounterHandlerFormat, i)))
+			}
 		})
 	})
 })

@@ -5,7 +5,13 @@
 // If we call the method Inc, the count must be incremented by 1
 package creational
 
-import "sync/atomic"
+import (
+	"fmt"
+	"net/http"
+	"sync/atomic"
+)
+
+const CounterHandlerFormat = "Counter value is: %d"
 
 type Counter int64
 
@@ -23,7 +29,16 @@ func (c *Counter) Inc() *Counter {
 	return (*Counter)(&i)
 }
 
-func(c *Counter) Reset() {
+func (c *Counter) Reset() {
 	*c = 0
 }
 
+// Handler
+func (c *Counter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.Header().Set("Allow", http.MethodGet)
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	fmt.Fprintf(w, CounterHandlerFormat, *(*int64)(c.Inc()))
+}
